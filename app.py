@@ -13,7 +13,7 @@ st.set_page_config(page_title="Universal Linkage Engine", page_icon="🔗", layo
 # --- SIDEBAR (MONETIZATION) ---
 with st.sidebar:
     st.title("🔗 Get Full Access")
-    st.markdown("The Universal Linkage Engine automates complex fuzzy matching and record linkage across disparate datasets.")
+    st.markdown("The Universal Linkage Engine automates reconciliation between disparate data sets using empirical matching with LLM audits.")
     st.markdown("---")
     st.subheader("Pricing")
     st.markdown("**$50 per 5,000 records**")
@@ -23,7 +23,7 @@ with st.sidebar:
     st.markdown("*Note: If you do not enter an API key, the engine will run in Demo Mode and only process the first 20 rows of your datasets.*")
 
 # --- UI FRONTEND ---
-st.title("Universal Linkage Engine")
+st.title("Universal Data Link Engine")
 st.markdown("Securely upload your datasets and let the engine auto-detect and link matching records.")
 
 # Authentication
