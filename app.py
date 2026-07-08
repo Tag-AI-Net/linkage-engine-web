@@ -6,7 +6,8 @@ import io
 # --- CONFIGURATION ---
 API_URL = "https://linkage-api-745046015036.us-east1.run.app/api/v1/link-datasets"
 DEMO_KEY = "demo-public-key"
-STRIPE_LINK = "https://buy.stripe.com/9B63cv0C1chVeib2ZM4Rq00"
+STRIPE_LINK1 = "https://buy.stripe.com/9B63cv0C1chVeib2ZM4Rq00"
+STRIPE_LINK2 = "https://buy.stripe.com/00w14nacBeq37TN8k64Rq02"
 
 st.set_page_config(page_title="Universal Linkage Engine", page_icon="🔗", layout="wide")
 
@@ -17,8 +18,11 @@ with st.sidebar:
     st.markdown("---")
     st.subheader("Pricing")
     st.markdown("**$50 per 5,000 records**")
-    st.markdown("Includes unlimited API access, Zapier integration, and priority processing.")
-    st.markdown(f"[💳 Purchase API Key]({STRIPE_LINK})")
+    st.markdown("Pre-pay for up to 5,000 records. Includes unlimited API access and integrations")
+    st.markdown(f"[💳 Purchase Prepaid API Key]({STRIPE_LINK1})")
+    st.markdown("**Metered Access**")
+    st.markdown("Includes unlimited metered API access, integrations, and priority processing. A $5 monthly access fee applies.")
+    st.markdown(f"[💳 Purchase Metered API Key]({STRIPE_LINK2})")
     st.markdown("---")
     st.markdown("*Note: If you do not enter an API key, the engine will run in Demo Mode and only process the first 20 rows of your datasets.*")
 
