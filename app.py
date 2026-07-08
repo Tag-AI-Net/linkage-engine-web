@@ -11,7 +11,7 @@ STRIPE_LINK2 = "https://buy.stripe.com/00w14nacBeq37TN8k64Rq02"
 
 st.set_page_config(page_title="Universal Linkage Engine", page_icon="🔗", layout="wide")
 
-# --- SIDEBAR (MONETIZATION) ---
+# --- SIDEBAR (MONETIZATION & DOCUMENTATION) ---
 with st.sidebar:
     st.title("🔗 Get Full Access")
     st.markdown("The Universal Linkage Engine automates reconciliation between disparate data sets using empirical matching with LLM audits.")
@@ -25,6 +25,77 @@ with st.sidebar:
     st.markdown(f"[💳 Purchase Metered API Key]({STRIPE_LINK2})")
     st.markdown("---")
     st.markdown("*Note: If you do not enter an API key, the engine will run in Demo Mode and only process the first 20 rows of your datasets.*")
+    st.markdown("---")
+    
+    # Integrated Developer Hub Documentation
+    st.subheader("🛠️ Developer Hub")
+    with st.expander("🔌 Universal Linkage API Docs", expanded=False):
+        st.markdown("""
+        ### Overview
+        The Universal Linkage Engine is a schema-agnostic, hybrid record linkage API. It automatically profiles disparate datasets to detect empirical overlaps, executes a cascading fuzzy-match strategy, and utilizes an integrated LLM to adjudicate ambiguous matches.
+        
+        It can return a finalized merged CSV or an **Actionable JSON** payload designed for webhooks and enterprise automation platforms.
+
+        ---
+
+        ### 1. Endpoint Configuration
+        * **Method:** `POST`
+        * **URL:** `https://linkage-api-745046015036.us-east1.run.app/api/v1/link-datasets`
+        * **Payload Type:** `multipart/form-data`
+
+        ---
+
+        ### 2. Request Parameters
+        
+        | Parameter | Type | Required | Description |
+        | :--- | :--- | :--- | :--- |
+        | `file_a` | File | Yes | Primary source dataset (`.csv`, `.json`, `.parquet`, `.xml`, `.sav`, `.dta`, `.sas7bdat`). |
+        | `file_b` | File | Yes | Target dataset to match against `file_a`. |
+        | `key` | String | Yes | Your active metered or prepaid API key. |
+        | `return_csv` | Boolean | No | Defaults to `true`. If `false`, returns structured JSON actions for database/CRM webhooks. |
+
+        ---
+
+        ### 3. Universal Trigger Schema (JSON Mode)
+        When calling the API with `return_csv=false`, the server isolates the matching records and returns conditional `trigger_event` flags to let downstream workflows execute precise routing logic.
+
+        **Example Response:**
+        ```json
+        {
+          "status": "success",
+          "summary": {
+            "records_processed": 5420,
+            "matches_found": 12
+          },
+          "actions": [
+            {
+              "trigger_event": "EXACT_DUPLICATE",
+              "confidence_score": 100.0,
+              "match_method": "Exact unique_id + last_name",
+              "record_a_source": {
+                "id_a": 1045,
+                "system_id": "CRM-8821",
+                "name": "Jon Doe"
+              },
+              "record_b_target": {
+                "id_b": 22,
+                "system_id": "WEB-991",
+                "name": "Jonathan Doe",
+                "email": "jon@example.com"
+              }
+            }
+          ]
+        }
+        ```
+
+        ---
+
+        ### 4. Enterprise Automation Use Cases
+
+        * **CRM Deduplication & Enrichment:** Set `return_csv=false`. Map your webhook trigger step: `IF trigger_event == 'EXACT_DUPLICATE'`, execute a step to automatically append missing fields found in `record_b_target` (like an updated email address) directly into the profile identified by `record_a_source.system_id`.
+        * **Database Cleanup & Hygiene:** For building management systems or continuous directory audits, use the isolated tracking parameters. If an exact overlap or redundancy is flagged, your downstream workflow can instantly target and purge or archive `record_b_target.system_id` directly inside your secondary system without impacting the master source layer.
+        * **Survey Frame Merging:** For matching standalone research frames (e.g., aligning voter registries with unmatched text-to-web or email-based field exit polling data), pass the files with `return_csv=true`. The engine handles cross-column semantic mapping automatically and delivers a clean data download instantly.
+        """)
 
 # --- UI FRONTEND ---
 st.title("Universal Data Link Engine")
@@ -116,8 +187,6 @@ if st.button("Link Datasets", type="primary"):
                     
             except Exception as e:
                 st.error(f"An error occurred: {str(e)}")
-
-
 
 def render_api_docs_sidebar():
     """Renders the comprehensive, technical API documentation inside the Streamlit sidebar."""
