@@ -196,7 +196,7 @@ def render_api_docs_sidebar():
     with st.sidebar.expander("🔌 Universal Linkage API Documentation", expanded=False):
         st.markdown("""
         ### Overview
-        The Universal Linkage Engine is a schema-agnostic, hybrid record linkage API. It automatically profiles disparate datasets to detect empirical overlaps, executes a cascading fuzzy-match strategy, and utilizes an integrated LLM to adjudicate ambiguous matches.
+        The Universal Data Link Engine is a schema-agnostic, hybrid record linkage API. It automatically profiles disparate datasets to detect empirical overlaps, executes a cascading fuzzy-match strategy, and utilizes an integrated LLM to audit selections and adjudicate ambiguous matches.
         
         It can return a finalized merged CSV or an **Actionable JSON** payload designed for webhooks and enterprise automation platforms.
 
