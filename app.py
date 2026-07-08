@@ -1,0 +1,114 @@
+import streamlit as st
+import pandas as pd
+import requests
+import io
+
+# --- CONFIGURATION ---
+API_URL = "https://linkage-api-745046015036.us-east1.run.app/api/v1/link-datasets"
+DEMO_KEY = "demo-public-key"
+STRIPE_LINK = "https://buy.stripe.com/9B63cv0C1chVeib2ZM4Rq00"
+
+st.set_page_config(page_title="Universal Linkage Engine", page_icon="🔗", layout="wide")
+
+# --- SIDEBAR (MONETIZATION) ---
+with st.sidebar:
+    st.title("🔗 Get Full Access")
+    st.markdown("The Universal Linkage Engine automates complex fuzzy matching and record linkage across disparate datasets.")
+    st.markdown("---")
+    st.subheader("Pricing")
+    st.markdown("**$50 per 5,000 records**")
+    st.markdown("Includes unlimited API access, Zapier integration, and priority processing.")
+    st.markdown(f"[💳 Purchase API Key]({STRIPE_LINK})")
+    st.markdown("---")
+    st.markdown("*Note: If you do not enter an API key, the engine will run in Demo Mode and only process the first 20 rows of your datasets.*")
+
+# --- UI FRONTEND ---
+st.title("Universal Linkage Engine")
+st.markdown("Securely upload your datasets and let the engine auto-detect and link matching records.")
+
+# Authentication
+api_key_input = st.text_input("API Key (Leave blank for 20-row Demo)", type="password")
+
+# Data Upload
+st.subheader("Upload Datasets")
+col1, col2 = st.columns(2)
+with col1:
+    file_a = st.file_uploader("Upload Dataset A")
+with col2:
+    file_b = st.file_uploader("Upload Dataset B")
+
+# Parameters
+st.subheader("Linkage Parameters")
+threshold = st.slider("Fuzzy Match Confidence Threshold", min_value=0.5, max_value=1.0, value=0.85, step=0.01)
+
+# --- BACKEND LOGIC ---
+if st.button("Link Datasets", type="primary"):
+    if not file_a or not file_b:
+        st.error("Please upload both datasets.")
+    else:
+        is_demo = not bool(api_key_input.strip())
+        active_key = api_key_input.strip() if not is_demo else DEMO_KEY
+        
+        with st.spinner("Engine running... auto-mapping columns and linking records..."):
+            try:
+                # Handle Demo Truncation safely on the frontend
+                if is_demo:
+                    st.warning("⚠️ Running in Demo Mode: Only the first 20 rows will be processed.")
+                    
+                    # Read and truncate (Supporting CSV and Excel for the web demo)
+                    try:
+                        if file_a.name.endswith('.csv'): df_a = pd.read_csv(file_a).head(20)
+                        else: df_a = pd.read_excel(file_a).head(20)
+                        
+                        if file_b.name.endswith('.csv'): df_b = pd.read_csv(file_b).head(20)
+                        else: df_b = pd.read_excel(file_b).head(20)
+                    except Exception:
+                        st.error("Demo Mode currently supports CSV and Excel files. Please purchase an API key to process SPSS, Parquet, or JSON files.")
+                        st.stop()
+                    
+                    # Convert truncated dataframes back to raw bytes for the API
+                    buf_a, buf_b = io.BytesIO(), io.BytesIO()
+                    df_a.to_csv(buf_a, index=False)
+                    df_b.to_csv(buf_b, index=False)
+                    
+                    files = {
+                        "file_a": ("demo_a.csv", buf_a.getvalue()),
+                        "file_b": ("demo_b.csv", buf_b.getvalue())
+                    }
+                else:
+                    # Paid user: Send the raw files directly to the server as-is
+                    files = {
+                        "file_a": (file_a.name, file_a.getvalue()),
+                        "file_b": (file_b.name, file_b.getvalue())
+                    }
+                
+                # Execute the API Call
+                params = {"key": active_key}
+                data = {"threshold": threshold}
+                
+                response = requests.post(API_URL, params=params, data=data, files=files)
+                
+                if response.status_code == 200:
+                    try:
+                        result_data = response.json()
+                        linked_df = pd.DataFrame(result_data.get("matches", []))
+                    except requests.exceptions.JSONDecodeError:
+                        linked_df = pd.read_csv(io.StringIO(response.text))
+                    
+                    st.success(f"Linkage Complete! Found {len(linked_df)} matched records.")
+                    st.dataframe(linked_df.head(10))
+                    
+                    csv_buffer = io.StringIO()
+                    linked_df.to_csv(csv_buffer, index=False)
+                    
+                    st.download_button(
+                        label="Download Merged Dataset",
+                        data=csv_buffer.getvalue(),
+                        file_name="linked_results.csv",
+                        mime="text/csv"
+                    )
+                else:
+                    st.error(f"API Error {response.status_code}: {response.text}")
+                    
+            except Exception as e:
+                st.error(f"An error occurred: {str(e)}")
