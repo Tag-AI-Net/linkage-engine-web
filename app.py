@@ -14,7 +14,7 @@ st.set_page_config(page_title="Universal Linkage Engine", page_icon="🔗", layo
 # --- SIDEBAR (MONETIZATION & DOCUMENTATION) ---
 with st.sidebar:
     st.title("🔗 Get Full Access")
-    st.markdown("The Universal Linkage Engine automates reconciliation between disparate data sets using empirical matching with LLM audits.")
+    st.markdown("The Universal Data Link Engine automates reconciliation between disparate data sets using empirical matching with LLM audits.")
     st.markdown("---")
     st.subheader("Pricing")
     st.markdown("**$50 per 5,000 total row records**")
