@@ -24,14 +24,23 @@ def get_gcs_ticket(api_key: str, filename: str) -> dict:
     return response.json()
 
 def stream_to_gcs(signed_url: str, file_object):
-    """Step 2: Stream the file directly to Google Cloud Storage."""
+    """Step 2: Stream the file directly to GCS in memory-safe 5MB chunks."""
     file_object.seek(0)
     headers = {"Content-Type": "application/octet-stream"}
-    response = requests.put(signed_url, data=file_object, headers=headers)
+    
+    # Generator to yield chunks without loading the whole file into RAM
+    def read_in_chunks(f, chunk_size=5 * 1024 * 1024):
+        while True:
+            data = f.read(chunk_size)
+            if not data:
+                break
+            yield data
+
+    response = requests.put(signed_url, data=read_in_chunks(file_object), headers=headers)
     response.raise_for_status()
 
-def execute_gcs_linkage(api_key: str, path_a: str, path_b: str) -> bytes:
-    """Step 3: Tell the backend to process the files already sitting in GCS."""
+def execute_gcs_linkage(api_key: str, path_a: str, path_b: str) -> str:
+    """Step 3: Tell the backend to process files and return the Download URL."""
     url = f"{API_BASE_URL}/api/v1/link-gcs-datasets"
     payload = {
         "file_a_path": path_a,
@@ -40,7 +49,8 @@ def execute_gcs_linkage(api_key: str, path_a: str, path_b: str) -> bytes:
     }
     response = requests.post(url, params={"key": api_key}, json=payload)
     response.raise_for_status()
-    return response.content
+    # Now expecting a JSON string containing the URL, not raw CSV bytes
+    return response.json().get("download_url")
 
 # =================================================================
 # SIDEBAR (MONETIZATION & DOCUMENTATION)
@@ -232,29 +242,18 @@ if st.button("Link Datasets", type="primary"):
                     st.write("☁️ Streaming Dataset B to Google Cloud...")
                     stream_to_gcs(ticket_b["upload_url"], file_b)
                     
-                    # 3. Execute Match
+                   # 3. Execute Match
                     st.write("🧠 Executing cascading fuzzy match engine (this may take a moment)...")
-                    csv_bytes = execute_gcs_linkage(active_key, ticket_a["file_path"], ticket_b["file_path"])
+                    # Now returns a string URL, not massive bytes
+                    download_url = execute_gcs_linkage(active_key, ticket_a["file_path"], ticket_b["file_path"])
                     
                     status.update(label="Pipeline Execution Complete!", state="complete", expanded=False)
                 
                 st.success("Successfully processed and matched records!")
                 
-                # Render safe preview of the first 10 rows
-                try:
-                    preview_df = pd.read_csv(io.BytesIO(csv_bytes), nrows=10)
-                    st.dataframe(preview_df)
-                except Exception:
-                    pass
-                
-                # Download Button
-                st.download_button(
-                    label="Download Merged Dataset",
-                    data=csv_bytes,
-                    file_name="linked_master_results.csv",
-                    mime="text/csv",
-                    type="primary"
-                )
+                # Replace the memory-heavy download button with a direct link
+                st.markdown(f"### [📥 Click Here to Download Merged Dataset]({download_url})")
+                st.info("This secure link will expire in 1 hour. The original datasets have been purged from our servers for security.")
 
             except requests.exceptions.HTTPError as err:
                 try:
